@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  eventbridge-integration-solution-shopify-image-processing
+
+  (qs-1qpph5fcn)
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: Amazon-EventBridge-Integration-Solution-Shopify-Image-Processing
+    Description: This application demonstrates an integration with AWS Lambda for Amazon EventBridge SaaS Partner Integrations
+    Author: AWS Quick Start
+    LicenseUrl: LICENSE
+    ReadmeUrl: README.md
+    Labels: ['amazon', 'eventbridge', 'integration', 'solution', 'aws', 'lambda', 'step_functions', 'shopify', 'image_processing', 'rekognition']
+    HomePageUrl: https://github.com/aws-quickstart/eventbridge-integration-solution-shopify-image-processing
+    SemanticVersion: 0.1.0
+    SourceCodeUrl: https://github.com/aws-quickstart/eventbridge-integration-solution-shopify-image-processing
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Amazon EventBridge Integration Solution
+      Parameters:
+      - EventSourceName
+    - Label:
+        default: Shopify Configuration
+      Parameters:
+      - ShopifyShopDomain
+      - ShopifyAccessToken
+    ParameterLabels:
+      EventSourceName:
+        default: Event Source Name
+      ShopifyShopDomain:
+        default: Shop Domain
+      ShopifyAccessToken:
+        default: Access Token
+
+Parameters:
+  EventSourceName:
+    Type: String
+    AllowedPattern: aws\.partner(/[\.\-_A-Za-z0-9]+){2,}
+    MinLength: 1
+    MaxLength: 256
+    Description: Name of the Amazon EventBridge SaaS Partner Event Source to associate with an Event Bus. For example, aws.partner/example.com/1234567890/test-event-source.
+  ShopifyShopDomain:
+    Type: String
+    MinLength: 1
+    Description: The Shopify shop's domain. For example, example.myshopify.com.
+  ShopifyAccessToken:
+    Type: String
+    MinLength: 1
+    NoEcho: true
+    Description: The Shopify app's Admin API access token or password.
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Handler: app.lambda_handler
+    Runtime: python3.8
+    Timeout: 60
+
+Resources:
+  EventBridgeEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      EventSourceName: !Ref EventSourceName
+      Name: !Ref EventSourceName
+
+  ExtractValuesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/state_machine_functions/extract_values
+
+  DetectLabelsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/state_machine_functions/detect_labels
+      Policies:
+      - RekognitionDetectOnlyPolicy: {}
+
+  UpdateTagsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/state_machine_functions/update_tags
+      Environment:
+        Variables:
+          access_token: !Ref ShopifyAccessToken
+          shop_domain: !Ref ShopifyShopDomain
+
+  TagGenerator:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Definition:
+        StartAt: Extract Values Task
+        States:
+          Extract Values Task:
+            Type: Task
+            Resource: !GetAtt ExtractValuesFunction.Arn
+            Next: Image Updated Choice
+          Image Updated Choice:
+            Type: Choice
+            Choices:
+            - Variable: "$.image_updated"
+              BooleanEquals: true
+              Next: Detect Labels Task
+            - Variable: "$.image_updated"
+              BooleanEquals: false
+              Next: No Image Updated Succeed
+            Default: Image Updated Fail
+          No Image Updated Succeed:
+            Type: Succeed
+          Image Updated Fail:
+            Type: Fail
+            Cause: Could not determine if images were updated.
+          Detect Labels Task:
+            Type: Task
+            Resource: !GetAtt DetectLabelsFunction.Arn
+            Next: New Tags Choice
+          New Tags Choice:
+            Type: Choice
+            Choices:
+            - Variable: "$.new_tags_count"
+              NumericGreaterThan: 0
+              Next: Update Tags Task
+            - Variable: "$.new_tags_count"
+              NumericEquals: 0
+              Next: No New Tags Succeed
+            Default: New Tags Fail
+          No New Tags Succeed:
+            Type: Succeed
+          New Tags Fail:
+            Type: Fail
+            Cause: Could not determine if new tags were detected.
+          Update Tags Task:
+            Type: Task
+            Resource: !GetAtt UpdateTagsFunction.Arn
+            End: true
+      Events:
+        EventBridgeRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              account:
+              - !Ref AWS::AccountId
+              detail:
+                metadata:
+                  X-Shopify-Topic:
+                  - products/create
+                  - products/update
+                payload:
+                  image:
+                    id:
+                    - This field will be updated by EventPatternFix custom resource during deployment.
+            EventBusName: !Ref EventBridgeEventBus
+      Policies:
+      - LambdaInvokePolicy:
+          FunctionName: !Ref ExtractValuesFunction
+      - LambdaInvokePolicy:
+          FunctionName: !Ref DetectLabelsFunction
+      - LambdaInvokePolicy:
+          FunctionName: !Ref UpdateTagsFunction
+      Type: EXPRESS
+
+  TagGeneratorEventPatternFixFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/event_pattern_fix
+      Environment:
+        Variables:
+          bus_rule: !Ref TagGeneratorEventBridgeRule
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+          - events:DescribeRule
+          - events:PutRule
+          Resource: !GetAtt TagGeneratorEventBridgeRule.Arn
+
+  TagGeneratorEventPatternFix:
+    Type: Custom::EventPatternFix
+    Properties:
+      EventBridgeRuleToForceUpdate: !GetAtt TagGeneratorEventBridgeRule.Arn
+      ServiceToken: !GetAtt TagGeneratorEventPatternFixFunction.Arn
+
+Outputs:
+  TagGeneratorEventBridgeRule:
+    Description: "EventBridge rule ARN"
+    Value: !GetAtt TagGeneratorEventBridgeRule.Arn
+  TagGenerator:
+    Description: "Tag Generator state machine ARN"
+    Value: !Ref TagGenerator
+  TagGeneratorIamRole:
+    Description: "Implicit IAM Role created for Tag Generator state machine "
+    Value: !GetAtt TagGeneratorRole.Arn
+  ExtractValuesFunction:
+    Description: "Extract Values Lambda function ARN"
+    Value: !GetAtt ExtractValuesFunction.Arn
+  ExtractValuesFunctionIamRole:
+    Description: "Implicit IAM Role created for Extract Values function"
+    Value: !GetAtt ExtractValuesFunctionRole.Arn
+  DetectLabelsFunction:
+    Description: "Detect Labels Lambda function ARN"
+    Value: !GetAtt DetectLabelsFunction.Arn
+  DetectLabelsFunctionIamRole:
+    Description: "Implicit IAM Role created for Detect Labels function"
+    Value: !GetAtt DetectLabelsFunctionRole.Arn
+  UpdateTagsFunction:
+    Description: "Update Tags Lambda function ARN"
+    Value: !GetAtt UpdateTagsFunction.Arn
+  UpdateTagsFunctionIamRole:
+    Description: "Implicit IAM Role created for Update Tags function"
+    Value: !GetAtt UpdateTagsFunctionRole.Arn

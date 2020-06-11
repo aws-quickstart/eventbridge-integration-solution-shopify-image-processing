@@ -1,0 +1,6 @@
+{
+    "product_id": 123456789,
+    "existing_tags": ["Foo", "Bar"],
+    "new_tags": ["Tag1", "Tag2"],
+    "new_tags_count": 2
+}
