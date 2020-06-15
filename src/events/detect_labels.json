@@ -1,4 +1,5 @@
 {
+    "shop_domain": "example.myshopify.com",
     "product_id": 123456789,
     "existing_tags": ["Foo", "Bar"],
     "images": [{

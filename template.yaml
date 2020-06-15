@@ -25,13 +25,10 @@ Metadata:
     - Label:
         default: Shopify Configuration
       Parameters:
-      - ShopifyShopDomain
       - ShopifyAccessToken
     ParameterLabels:
       EventSourceName:
         default: Event Source Name
-      ShopifyShopDomain:
-        default: Shop Domain
       ShopifyAccessToken:
         default: Access Token
 
@@ -42,10 +39,6 @@ Parameters:
     MinLength: 1
     MaxLength: 256
     Description: Name of the Amazon EventBridge SaaS Partner Event Source to associate with an Event Bus. For example, aws.partner/example.com/1234567890/test-event-source.
-  ShopifyShopDomain:
-    Type: String
-    MinLength: 1
-    Description: The Shopify shop's domain. For example, example.myshopify.com.
   ShopifyAccessToken:
     Type: String
     MinLength: 1
@@ -85,7 +78,6 @@ Resources:
       Environment:
         Variables:
           access_token: !Ref ShopifyAccessToken
-          shop_domain: !Ref ShopifyShopDomain
 
   TagGenerator:
     Type: AWS::Serverless::StateMachine
@@ -139,6 +131,7 @@ Resources:
         EventBridgeRule:
           Type: EventBridgeRule
           Properties:
+            EventBusName: !Ref EventBridgeEventBus
             Pattern:
               account:
               - !Ref AWS::AccountId
@@ -151,7 +144,6 @@ Resources:
                   image:
                     id:
                     - This field will be updated by EventPatternFix custom resource during deployment.
-            EventBusName: !Ref EventBridgeEventBus
       Policies:
       - LambdaInvokePolicy:
           FunctionName: !Ref ExtractValuesFunction

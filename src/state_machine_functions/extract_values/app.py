@@ -24,6 +24,9 @@ def lambda_handler(event, context):
             'image_updated': image_updated
         }
 
+    shop_domain = event['detail']['metadata']['X-Shopify-Shop-Domain']
+    print(f"Shop Domain: {shop_domain}")
+
     # NOTE: Shopify product ID is an unsigned 64-bit integer that's used as a
     # unique identifier for the product. Each id is unique across the Shopify
     # system. No two products will have the same id, even if they're from
@@ -43,6 +46,7 @@ def lambda_handler(event, context):
     images_src = [sub['src'] for sub in event['detail']['payload']['images']]
 
     return {
+        'shop_domain': shop_domain,
         'product_id': product_id,
         'existing_tags': existing_tags,
         'images': images,

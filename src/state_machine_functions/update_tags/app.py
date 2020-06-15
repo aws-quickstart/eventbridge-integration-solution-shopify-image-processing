@@ -5,10 +5,12 @@ import requests
 API_VERSION = '2020-04'
 
 access_token = os.environ['access_token']
-shop_domain = os.environ['shop_domain']
 
 def lambda_handler(event, context):
     print(f"Event Received:\n{json.dumps(event)}")
+
+    shop_domain = event['shop_domain']
+    print(f"Shop Domain: {shop_domain}")
 
     # NOTE: Shopify product ID is an unsigned 64-bit integer that's used as a
     # unique identifier for the product. Each id is unique across the Shopify

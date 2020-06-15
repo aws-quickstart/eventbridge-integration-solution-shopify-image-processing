@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from extract_values.app import lambda_handler as extract_values_handler
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-west-2'}):
     from detect_labels.app import lambda_handler as detect_labels_handler
-with mock.patch.dict('os.environ', {'access_token': '1234567890', 'shop_domain': 'example'}):
+with mock.patch.dict('os.environ', {'access_token': '1234567890'}):
     from update_tags.app import lambda_handler as update_tags_handler
 
 
@@ -44,6 +44,7 @@ class ShopifyExtractValuesTest(unittest.TestCase):
         event_type = 'extract_values_image_updated'
         response = extract_values_handler(get_eventbridge_event(event_type), '')
 
+        self.assertIn('shop_domain', response)
         self.assertIn('product_id', response)
         self.assertIn('existing_tags', response)
         self.assertIn('images', response)
@@ -70,6 +71,7 @@ class ShopifyDetectLabelsTest(unittest.TestCase):
         event_type = 'detect_labels'
         response = detect_labels_handler(get_eventbridge_event(event_type), '')
 
+        self.assertIn('shop_domain', response)
         self.assertIn('product_id', response)
         self.assertIn('existing_tags', response)
         self.assertIn('new_tags', response)
@@ -82,12 +84,11 @@ class ShopifyDetectLabelsTest(unittest.TestCase):
         self.assertEqual(call_detect_labels_mock.call_count, 4)
 
 class ShopifyUpdateTagsTest(unittest.TestCase):
-    @mock.patch.dict('os.environ', {'access_token': '1234567890', 'shop_domain': 'example'})
+    @mock.patch.dict('os.environ', {'access_token': '1234567890'})
     @mock.patch('requests.put', side_effect=mocked_requests_put_call)
     def test_update_tags(self, call_requests_mock):
         print("\n\n*** Test test_update_tags ***")
         assert 'access_token' in os.environ
-        assert 'shop_domain' in os.environ
 
         event_type = 'update_tags'
         response = update_tags_handler(get_eventbridge_event(event_type), '')
@@ -385,6 +386,7 @@ def get_eventbridge_event(event_type):
         }
     elif event_type == 'detect_labels':
         return {
+            'shop_domain': "example.myshopify.com",
             'product_id': 123456789,
             'existing_tags': ['Foo', 'Bar'],
             'images': [
@@ -445,6 +447,7 @@ def get_eventbridge_event(event_type):
         }
     elif event_type == 'update_tags':
         return {
+            'shop_domain': "example.myshopify.com",
             'product_id': 123456789,
             'existing_tags': ['Foo', 'Bar'],
             'new_tags': ['Tag1', 'Tag2'],
