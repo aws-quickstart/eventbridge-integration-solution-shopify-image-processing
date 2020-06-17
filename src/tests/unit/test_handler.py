@@ -11,8 +11,7 @@ from dataclasses import dataclass
 from extract_values.app import lambda_handler as extract_values_handler
 with mock.patch.dict('os.environ', {'AWS_REGION': 'us-west-2'}):
     from detect_labels.app import lambda_handler as detect_labels_handler
-with mock.patch.dict('os.environ', {'access_token': '1234567890'}):
-    from update_tags.app import lambda_handler as update_tags_handler
+from update_tags.app import lambda_handler as update_tags_handler
 
 
 def mocked_client_detect_labels_call(self, operation_name, **kwarg):

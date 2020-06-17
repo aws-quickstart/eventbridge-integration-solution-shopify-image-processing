@@ -4,8 +4,6 @@ import requests
 
 API_VERSION = '2020-04'
 
-access_token = os.environ['access_token']
-
 def lambda_handler(event, context):
     print(f"Event Received:\n{json.dumps(event)}")
 
@@ -34,6 +32,11 @@ def lambda_handler(event, context):
     print(f"Combined tags: {combined_tags}")
 
     print("Updating tags...")
+    # NOTE: This is where you could do an access_token lookup for multiple shops
+    # based on the Shopify shop domain of the merchant. In this example, we
+    # just use the access_token that was provided as part of the function configuration.
+    access_token = os.environ['access_token']
+
     headers = {
         'Content-Type': "application/json",
         'X-Shopify-Access-Token': access_token
