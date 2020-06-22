@@ -43,7 +43,9 @@ Parameters:
     Type: String
     MinLength: 1
     NoEcho: true
-    Description: The Shopify app's Admin API access token or password.
+    Description: >
+      A Shopify app's access token for a Shopify shop. This access token is used as a single shop example to call back the Shopify Admin API products endpoint.
+      For multiple shop access, you can explore the Update Tags AWS Lambda function code to include your own access token lookup logic.
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
