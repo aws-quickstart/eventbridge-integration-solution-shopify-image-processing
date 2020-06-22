@@ -1,0 +1,12 @@
+project:
+  name: eventbridge-integration-solution-shopify-image-processing
+  owner: quickstart-eng@amazon.com
+  package_lambda: false
+  regions:
+  - us-east-1
+  s3_bucket: ''
+
+tests:
+  eventbridge:
+    s3_bucket: ''
+    template: ./packaged.yml
