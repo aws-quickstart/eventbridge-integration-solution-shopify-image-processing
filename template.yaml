@@ -8,13 +8,13 @@ Description: >
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: Amazon-EventBridge-Integration-Solution-Shopify-Image-Processing
-    Description: This application demonstrates an integration with AWS Lambda for Amazon EventBridge SaaS Partner Integrations
+    Description: This application demonstrates an image processing workflow using AWS Step Functions, AWS Lambda, Amazon Rekognition, and the Shopify Amazon EventBridge Integration.
     Author: AWS Quick Start
     LicenseUrl: LICENSE
     ReadmeUrl: README.md
     Labels: ['amazon', 'eventbridge', 'integration', 'solution', 'aws', 'lambda', 'step_functions', 'shopify', 'image_processing', 'rekognition']
     HomePageUrl: https://github.com/aws-quickstart/eventbridge-integration-solution-shopify-image-processing
-    SemanticVersion: 0.1.0
+    SemanticVersion: 0.1.1
     SourceCodeUrl: https://github.com/aws-quickstart/eventbridge-integration-solution-shopify-image-processing
   AWS::CloudFormation::Interface:
     ParameterGroups:
