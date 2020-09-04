@@ -13,8 +13,8 @@ Metadata:
     LicenseUrl: LICENSE
     ReadmeUrl: README.md
     Labels: ['amazon', 'eventbridge', 'integration', 'solution', 'aws', 'lambda', 'step_functions', 'shopify', 'image_processing', 'rekognition']
-    HomePageUrl: https://github.com/aws-quickstart/eventbridge-integration-solution-shopify-image-processing
-    SemanticVersion: 0.1.1
+    HomePageUrl: https://aws.amazon.com/quickstart/eventbridge/shopify-image-processing/
+    SemanticVersion: 0.1.2
     SourceCodeUrl: https://github.com/aws-quickstart/eventbridge-integration-solution-shopify-image-processing
   AWS::CloudFormation::Interface:
     ParameterGroups:
